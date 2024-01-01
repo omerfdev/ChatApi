@@ -9,7 +9,7 @@ namespace Application.Models.DTOs.UserDTOs
 {
     public class UserResponseDto
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
         public string Username { get; set; } = string.Empty;
         public string About { get; set; } = string.Empty;
         public bool IsDarkTheme { get; set; }

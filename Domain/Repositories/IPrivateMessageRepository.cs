@@ -2,8 +2,6 @@
 using Domain.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Domain.Repositories
@@ -15,9 +13,9 @@ namespace Domain.Repositories
         Task<Tuple<List<PrivateMessage>, bool>> GetPrivateMessagesForPrivateChat(
             DateTime pageDate,
             int pageSize,
-            int firstUserId,
-            int secoundUserId);
+            string firstUserId,
+            string secondUserId);
 
-        Task<IEnumerable<ChatWithLastMessage>> GetRecentChatsForUser(int userId);
+        Task<IEnumerable<ChatWithLastMessage>> GetRecentChatsForUser(string userId);
     }
 }

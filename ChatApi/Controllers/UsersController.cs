@@ -33,7 +33,7 @@ namespace ChatApi.Controllers
 
         [Authorize]
         [HttpGet("{userId}")]
-        public async Task<IActionResult> GetUserById(int userId)
+        public async Task<IActionResult> GetUserById(string userId)
         {
             var user = await userRetrievalService.GetUserById(userId);
             return Ok(user);
@@ -41,7 +41,7 @@ namespace ChatApi.Controllers
 
         [Authorize]
         [HttpPut("{userId}/change-password")]
-        public async Task<IActionResult> ChangePassword([FromRoute] int userId, [FromBody] ChangePasswordRequestDto changePasswordDto)
+        public async Task<IActionResult> ChangePassword([FromRoute] string userId, [FromBody] ChangePasswordRequestDto changePasswordDto)
         {
             await userAccountService.ChangePasswordAsync(userId, changePasswordDto);
             return NoContent();
@@ -49,7 +49,7 @@ namespace ChatApi.Controllers
 
         [Authorize]
         [HttpPut("{userId}/about")]
-        public async Task<IActionResult> ChangeUserAbout([FromRoute] int userId, [FromQuery] string newAbout)
+        public async Task<IActionResult> ChangeUserAbout([FromRoute] string userId, [FromQuery] string newAbout)
         {
             await userAccountService.ChangeUserAboutAsync(userId, newAbout);
             return NoContent();
@@ -57,7 +57,7 @@ namespace ChatApi.Controllers
 
         [Authorize]
         [HttpPut("{userId}/dark-mode")]
-        public async Task<IActionResult> ChangeThemeMode([FromRoute] int userId, [FromQuery] bool isDarkMode)
+        public async Task<IActionResult> ChangeThemeMode([FromRoute] string userId, [FromQuery] bool isDarkMode)
         {
             await userAccountService.ChangeThemeModeAsync(userId, isDarkMode);
             return NoContent();

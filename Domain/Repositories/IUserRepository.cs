@@ -12,11 +12,8 @@ namespace Domain.Repositories
         Task AddAsync(User user);
         bool CheckIfUsernameExists(string username);
         void Delete(User user);
-        Task<User?> GetUserById(int userId);
-        Task<Tuple<List<User>, int>> GetUsers(
-            int pageNumber,
-            int pageSize,
-            string searchText = null);
+        Task<User?> GetUserById(string userId);
+        Task<Tuple<List<User>, int>> GetUsers(int pageNumber, int pageSize, string searchText = null);
         Task<User?> GetUserByUsername(string username);
     }
 }

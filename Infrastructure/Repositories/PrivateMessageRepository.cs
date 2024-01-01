@@ -2,69 +2,93 @@
 using Domain.Models;
 using Domain.Repositories;
 using Infrastructure.DbContexts;
+using Infrastructure.Models;
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Infrastructure.Repositories
 {
     public class PrivateMessageRepository : IPrivateMessageRepository
     {
-        private readonly ChatContext context;
-        public PrivateMessageRepository(ChatContext context)
+        private readonly IMongoCollection<PrivateMessage> _privateMessages;
+        private readonly IMongoCollection<User> _users;
+        private readonly ChatContext _context;  // Add this line
+
+        public PrivateMessageRepository(IUserDatabaseSettings settings,
+           IMongoClient mongoClient, IPrivateMessageDatabaseSettings settingsPrivateMessage, ChatContext context)  // Add ChatContext parameter
         {
-            this.context = context;
+            var user_database = mongoClient.GetDatabase(settings.DatabaseName);
+            var private_message_database = mongoClient.GetDatabase(settingsPrivateMessage.DatabaseName);
+
+            _users = user_database.GetCollection<User>(settings.UserCollectionName);
+            _privateMessages = private_message_database.GetCollection<PrivateMessage>(settingsPrivateMessage.PrivateMessageCollectionName);
+            _context = context;  // Set the context
         }
 
         public async Task AddAsync(PrivateMessage message)
         {
-            await context.PrivateMessages.AddAsync(message);
+            await _privateMessages.InsertOneAsync(message);
         }
 
         public void Delete(PrivateMessage message)
         {
-            context.PrivateMessages.Remove(message);
+            var filter = Builders<PrivateMessage>.Filter.Eq(m => m.Id, message.Id);
+            _privateMessages.DeleteOne(filter);
         }
 
         public async Task<Tuple<List<PrivateMessage>, bool>> GetPrivateMessagesForPrivateChat(
-            DateTime pageDate,
-            int pageSize,
-            int firstUserId,
-            int secoundUserId)
+             DateTime pageDate,
+             int pageSize,
+             string firstUserId,
+             string secondUserId)
         {
-            var messages = context.PrivateMessages
-                .Where(m => (m.SenderId == firstUserId && m.ReceiverId == secoundUserId) ||
-                           (m.SenderId == secoundUserId && m.ReceiverId == firstUserId))
-                .Where(m => m.CreationDate < pageDate)
-                .AsQueryable();
-            var messagesCount = await messages.CountAsync();
+            var filter = Builders<PrivateMessage>.Filter.Where(m =>
+                (m.SenderId == firstUserId && m.ReceiverId == secondUserId) ||
+                (m.SenderId == secondUserId && m.ReceiverId == firstUserId) &&
+                m.CreationDate < pageDate);
+
+            var messagesCount = await _privateMessages.CountDocumentsAsync(filter);
             var isThereMore = messagesCount > pageSize;
-            var messagesList = await messages
-                .OrderByDescending(c => c.CreationDate)
-                .Take(pageSize)
-                .OrderBy(c => c.CreationDate)
+
+            var messagesList = await _privateMessages
+                .Find(filter)
+                .SortByDescending(c => c.CreationDate)
+                .Limit(pageSize)
+                .SortBy(c => c.CreationDate)
                 .ToListAsync();
+
             var result = Tuple.Create(messagesList, isThereMore);
             return result;
         }
 
-        public async Task<IEnumerable<ChatWithLastMessage>> GetRecentChatsForUser(int userId)
+        public async Task<IEnumerable<ChatWithLastMessage>> GetRecentChatsForUser(string userId)
         {
-            var recentChatsWithLastMessages = await context.PrivateMessages
+            var recentChatsWithLastMessages = await _privateMessages
+                .AsQueryable()
                 .Where(m => m.SenderId == userId || m.ReceiverId == userId)
                 .GroupBy(m => m.SenderId == userId ? m.ReceiverId : m.SenderId)
                 .OrderByDescending(g => g.Max(m => m.CreationDate))
                 .Take(10)
-                .Select(g => new ChatWithLastMessage
-                {
-                    User = context.Users.Where(u => u.Id == g.Key).Include(u => u.Image).First(),
-                    LastMessage = g.OrderByDescending(msg => msg.CreationDate).First()
-                })
                 .ToListAsync();
-            return recentChatsWithLastMessages;
+
+            var result = recentChatsWithLastMessages.Select(async g =>
+            {
+                var user = await _context.User.Find(u => u.Id == g.Key).FirstOrDefaultAsync();
+                var lastMessage = g.OrderByDescending(msg => msg.CreationDate).First();
+
+                return new ChatWithLastMessage
+                {
+                    User = user,
+                    LastMessage = lastMessage
+                };
+            }).ToList();
+
+            return await Task.WhenAll(result);
         }
 
     }

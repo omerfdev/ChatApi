@@ -6,6 +6,8 @@ using Application.Utils;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Repositories;
+using Infrastructure.Models;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,17 +22,21 @@ namespace Application.Services.UserService.Implementations
         private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
         private readonly IAuthenticatedUserService authenticatedUserService;
+        //
+     
 
         public UserAccountService(
             IUserRepository userRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            IAuthenticatedUserService authenticatedUserService)
+            IAuthenticatedUserService authenticatedUserService
+           )
         {
             this.mapper = mapper;
             this.userRepository = userRepository;
             this.unitOfWork = unitOfWork;
             this.authenticatedUserService = authenticatedUserService;
+         
         }
 
 
@@ -49,7 +55,9 @@ namespace Application.Services.UserService.Implementations
             };
             await userRepository.AddAsync(user);
             await unitOfWork.SaveChangesAsync();
+       
             return mapper.Map<UserResponseDto>(user);
+            
         }
 
         public async Task<string> LoginUserAsync(UserRequestDto userRequestDto)
@@ -74,7 +82,7 @@ namespace Application.Services.UserService.Implementations
             return mapper.Map<UserResponseDto>(user);
         }
 
-        public async Task ChangePasswordAsync(int userId, ChangePasswordRequestDto changePasswordDto)
+        public async Task ChangePasswordAsync(string userId, ChangePasswordRequestDto changePasswordDto)
         {
             var authenticatedUserId = authenticatedUserService.GetAuthenticatedUserId();
             if (authenticatedUserId != userId)
@@ -96,7 +104,7 @@ namespace Application.Services.UserService.Implementations
             await unitOfWork.SaveChangesAsync();
         }
 
-        public async Task ChangeUserAboutAsync(int userId, string newAbout)
+        public async Task ChangeUserAboutAsync(string userId, string newAbout)
         {
             var authenticatedUserId = authenticatedUserService.GetAuthenticatedUserId();
             if (authenticatedUserId != userId)
@@ -112,7 +120,7 @@ namespace Application.Services.UserService.Implementations
             await unitOfWork.SaveChangesAsync();
         }
 
-        public async Task ChangeThemeModeAsync(int userId, bool isDarkMode)
+        public async Task ChangeThemeModeAsync(string userId, bool isDarkMode)
         {
             var authenticatedUserId = authenticatedUserService.GetAuthenticatedUserId();
             if (authenticatedUserId != userId)

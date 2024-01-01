@@ -41,12 +41,12 @@ namespace Application.Services.UserService.Implementations
             {
                 users = mapper.Map<IEnumerable<UserResponseDto>>(result.Item1),
                 numOfPages = result.Item2,
-                currentPage = pageNumber
+                currentPage = pageNumber,
             };
             return response;
         }
 
-        public async Task<UserResponseDto> GetUserById(int userId)
+        public async Task<UserResponseDto> GetUserById(string userId)
         {
             var user = await userRepository.GetUserById(userId);
             if (user == null)

@@ -1,13 +1,9 @@
 ﻿using Application.Services.UserService.Interfaces;
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using MongoDB.Bson;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Application.Services.UserService.Implementations
+namespace BusinessLayer.Services.UserService.Implementations
 {
     public class AuthenticatedUserService : IAuthenticatedUserService
     {
@@ -18,23 +14,30 @@ namespace Application.Services.UserService.Implementations
             this.httpContextAccessor = httpContextAccessor;
         }
 
-        public int GetAuthenticatedUserId()
+        public string GetAuthenticatedUserId()
         {
-            var userId = 0;
+            string userId = null; // Default olarak null olarak başlatıldı.
+
             if (httpContextAccessor.HttpContext != null)
             {
-                var NameIdentifier = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-                userId = int.Parse(NameIdentifier);
+                var nameIdentifier = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (nameIdentifier != null && int.TryParse(nameIdentifier, out int parsedUserId))
+                {
+                    userId = parsedUserId.ToString(); // int'i string'e çevirerek atama yapılıyor.
+                }
             }
+
             return userId;
         }
+
 
         public string GetAuthenticatedUsername()
         {
             var username = string.Empty;
             if (httpContextAccessor.HttpContext != null)
             {
-                username = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Name).Value;
+                username = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Name)?.Value;
             }
             return username;
         }

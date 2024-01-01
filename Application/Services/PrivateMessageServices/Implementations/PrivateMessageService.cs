@@ -2,6 +2,7 @@
 using Application.Exceptions;
 using Application.Models.DTOs.ChatDTOs;
 using Application.Models.DTOs.MessageDTOs;
+using Application.Services.PrivateMessageServices.Interfaces;
 using Application.Services.UserService.Interfaces;
 using AutoMapper;
 using Domain.Entities;
@@ -36,7 +37,7 @@ namespace Application.Services.PrivateMessageServices.Implementations
             this.userRepository = userRepository;
         }
 
-        public async Task<PrivateMessageResponseDto> StorePrivateMessage(int destinationUserId, string textMessage)
+        public async Task<PrivateMessageResponseDto> StorePrivateMessage(string destinationUserId, string textMessage)
         {
             var sourceUserId = authenticatedUserService.GetAuthenticatedUserId();
             var destinationUser = await userRepository.GetUserById(destinationUserId);
@@ -59,8 +60,8 @@ namespace Application.Services.PrivateMessageServices.Implementations
         public async Task<PrivateMessagesWithPaginationResponseDto> GetPrivateMessages(
             DateTime? pageDate,
             int pageSize,
-            int firstUserId,
-            int secoundUserId)
+            string firstUserId,
+            string secoundUserId)
         {
             var firstUser = await userRepository.GetUserById(firstUserId);
             var secoundUser = await userRepository.GetUserById(secoundUserId);
@@ -87,7 +88,7 @@ namespace Application.Services.PrivateMessageServices.Implementations
             return result;
         }
 
-        public async Task<IEnumerable<ChatWithLastMessageResponseDto>> GetRecentChatsForUser(int userId)
+        public async Task<IEnumerable<ChatWithLastMessageResponseDto>> GetRecentChatsForUser(string userId)
         {
             var authenticatedUserId = authenticatedUserService.GetAuthenticatedUserId();
             if (authenticatedUserId != userId)
@@ -99,14 +100,5 @@ namespace Application.Services.PrivateMessageServices.Implementations
             return mapper.Map<IEnumerable<ChatWithLastMessageResponseDto>>(queryResult);
         }
     }
-    public interface IPrivateMessageService
-    {
-        Task<PrivateMessageResponseDto> StorePrivateMessage(int destinationUserId, string textMessage);
-        Task<PrivateMessagesWithPaginationResponseDto> GetPrivateMessages(
-            DateTime? pageDate,
-            int pageSize,
-            int firstUserId,
-            int secoundUserId);
-        Task<IEnumerable<ChatWithLastMessageResponseDto>> GetRecentChatsForUser(int userId);
-    }
+    
 }

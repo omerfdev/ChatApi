@@ -1,4 +1,5 @@
 ﻿using Application.Services.PrivateMessageServices.Implementations;
+using Application.Services.PrivateMessageServices.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +19,7 @@ namespace ChatApi.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetRecentChatsForUser(int userId)
+        public async Task<IActionResult> GetRecentChatsForUser(string userId)
         {
             var result = await privateMessageService.GetRecentChatsForUser(userId);
             return Ok(result);

@@ -35,7 +35,7 @@ namespace Application.Services.UserService.Implementations
             this.userRepository = userRepository;
         }
 
-        public async Task ChangeProfilePictureAsync(int userId, IFormFile image)
+        public async Task ChangeProfilePictureAsync(string userId, IFormFile image)
         {
             var authenticatedUserId = authenticatedUserService.GetAuthenticatedUserId();
             if (authenticatedUserId != userId)
@@ -64,7 +64,7 @@ namespace Application.Services.UserService.Implementations
             await unitOfWork.SaveChangesAsync();
         }
 
-        public async Task AddProfilePictureAsync(int userId, IFormFile image)
+        public async Task AddProfilePictureAsync(string userId, IFormFile image)
         {
             var authenticatedUserId = authenticatedUserService.GetAuthenticatedUserId();
             if (authenticatedUserId != userId)
@@ -91,7 +91,7 @@ namespace Application.Services.UserService.Implementations
             await unitOfWork.SaveChangesAsync();
         }
 
-        public async Task DeleteProfilePictureAsync(int userId)
+        public async Task DeleteProfilePictureAsync(string userId)
         {
             var authenticatedUserId = authenticatedUserService.GetAuthenticatedUserId();
             if (authenticatedUserId != userId)

@@ -1,4 +1,5 @@
 ﻿using Application.Services.PrivateMessageServices.Implementations;
+using Application.Services.PrivateMessageServices.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,8 +22,8 @@ namespace ChatApi.Controllers
         public async Task<IActionResult> GetPrivateMessages(
             DateTime? pageDate,
             int pageSize,
-            int firstUserId,
-            int secoundUserId)
+            string firstUserId,
+            string secoundUserId)
         {
             var result = await privateMessageService.GetPrivateMessages(pageDate, pageSize, firstUserId, secoundUserId);
             return Ok(result);

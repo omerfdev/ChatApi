@@ -18,7 +18,7 @@ namespace ChatApi.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> AddProfilePicture([FromRoute] int userId, IFormFile image)
+        public async Task<IActionResult> AddProfilePicture([FromRoute] string userId, IFormFile image)
         {
             await userProfileImageService.AddProfilePictureAsync(userId, image);
             return Ok("success");
@@ -26,7 +26,7 @@ namespace ChatApi.Controllers
 
         [Authorize]
         [HttpPut]
-        public async Task<IActionResult> ChangeProfilePicture([FromRoute] int userId, IFormFile image)
+        public async Task<IActionResult> ChangeProfilePicture([FromRoute] string userId, IFormFile image)
         {
             await userProfileImageService.ChangeProfilePictureAsync(userId, image);
             return Ok("success");
@@ -34,7 +34,7 @@ namespace ChatApi.Controllers
 
         [Authorize]
         [HttpDelete]
-        public async Task<IActionResult> DeleteProfilePicture([FromRoute] int userId)
+        public async Task<IActionResult> DeleteProfilePicture([FromRoute] string userId)
         {
             await userProfileImageService.DeleteProfilePictureAsync(userId);
             return Ok("success");

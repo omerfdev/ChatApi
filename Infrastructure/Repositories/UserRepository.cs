@@ -1,32 +1,40 @@
-﻿using Domain.Entities;
-using Domain.Repositories;
-using Infrastructure.DbContexts;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Domain.Entities;
+using Domain.Repositories;
+using Infrastructure.DbContexts;
+using Infrastructure.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
 
 namespace Infrastructure.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        private readonly ChatContext context;
-        public UserRepository(ChatContext context)
+        private readonly IMongoCollection<User> _users;
+
+        public UserRepository(IUserDatabaseSettings settings,
+           IMongoClient mongoClient)  // Add ChatContext parameter
         {
-            this.context = context;
+            var user_database = mongoClient.GetDatabase(settings.DatabaseName);           
+
+            _users = user_database.GetCollection<User>(settings.UserCollectionName);
+            
         }
+
 
         public async Task AddAsync(User user)
         {
-            await context.Users.AddAsync(user);
+            await _users.InsertOneAsync(user);
         }
 
         public void Delete(User user)
         {
-            context.Users.Remove(user);
+            var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
+            _users.DeleteOne(filter);
         }
 
         public async Task<Tuple<List<User>, int>> GetUsers(
@@ -34,42 +42,43 @@ namespace Infrastructure.Repositories
             int pageSize,
             string searchText = null)
         {
-            var users = context.Users.Include(c => c.Image).AsQueryable();
-            if (!searchText.IsNullOrEmpty())
-                users = users.Where(u => u.Username.Contains(searchText));
+            var filterBuilder = Builders<User>.Filter;
+            var filterDefinition = filterBuilder.Empty; // Initial filter
 
-            var usersCount = await users.CountAsync();
-            var numOfPages = Math.Ceiling(usersCount / (pageSize * 1f));
-            if (pageNumber > numOfPages && numOfPages != 0)
+            if (!string.IsNullOrEmpty(searchText))
             {
-                return null;
+                filterDefinition &= filterBuilder.Regex("Username", new MongoDB.Bson.BsonRegularExpression(searchText, "i"));
             }
-            var usersList = await users.OrderBy(c => c.Username).Skip((pageNumber - 1) * pageSize).Take(pageSize)
-               .ToListAsync();
-            var result = Tuple.Create(usersList, (int)numOfPages);
+
+            var users = await _users
+                .Find(filterDefinition)
+                .Skip((pageNumber - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            var usersCount = await _users.CountDocumentsAsync(filterDefinition);
+            var numOfPages = (int)Math.Ceiling(usersCount / (pageSize * 1.0));
+
+            var result = Tuple.Create(users, numOfPages);
             return result;
         }
 
-        public async Task<User?> GetUserById(int userId)
+        public async Task<User?> GetUserById(string userId)
         {
-            return await context.Users
-                .Where(c => c.Id == userId)
-                .Include(c => c.Image)
-                .FirstOrDefaultAsync();
+            var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
+            return await _users.Find(filter).FirstOrDefaultAsync();
         }
 
         public async Task<User?> GetUserByUsername(string username)
         {
-            return await context.Users
-                .Where(c => c.Username == username)
-                .Include(c => c.Image)
-                .FirstOrDefaultAsync();
+            var filter = Builders<User>.Filter.Eq(u => u.Username, username);
+            return await _users.Find(filter).FirstOrDefaultAsync();
         }
 
         public bool CheckIfUsernameExists(string username)
         {
-            return context.Users.Any(u => u.Username == username);
+            var filter = Builders<User>.Filter.Eq(u => u.Username, username);
+            return _users.Find(filter).Any();
         }
-
     }
 }

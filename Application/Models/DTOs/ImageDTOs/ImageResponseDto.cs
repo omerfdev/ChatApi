@@ -8,7 +8,7 @@ namespace Application.Models.DTOs.ImageDTOs
 {
     public class ImageResponseDto
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
         public string ImagePath { get; set; }
     }
 }

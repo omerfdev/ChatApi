@@ -10,12 +10,12 @@ namespace Application.Services.PrivateMessageServices.Interfaces
 {
     public interface IPrivateMessageService
     {
-        Task<PrivateMessageResponseDto> StorePrivateMessage(int destinationUserId, string textMessage);
+        Task<PrivateMessageResponseDto> StorePrivateMessage(string destinationUserId, string textMessage);
         Task<PrivateMessagesWithPaginationResponseDto> GetPrivateMessages(
             DateTime? pageDate,
             int pageSize,
-            int firstUserId,
-            int secoundUserId);
-        Task<IEnumerable<ChatWithLastMessageResponseDto>> GetRecentChatsForUser(int userId);
+            string firstUserId,
+            string secoundUserId);
+        Task<IEnumerable<ChatWithLastMessageResponseDto>> GetRecentChatsForUser(string userId);
     }
 }
