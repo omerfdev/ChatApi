@@ -17,17 +17,17 @@ namespace Infrastructure.Repositories
     {
         private readonly IMongoCollection<PrivateMessage> _privateMessages;
         private readonly IMongoCollection<User> _users;
-        private readonly ChatContext _context;  // Add this line
+    
 
         public PrivateMessageRepository(IUserDatabaseSettings settings,
-           IMongoClient mongoClient, IPrivateMessageDatabaseSettings settingsPrivateMessage, ChatContext context)  // Add ChatContext parameter
+           IMongoClient mongoClient, IPrivateMessageDatabaseSettings settingsPrivateMessage)  // Add ChatContext parameter
         {
             var user_database = mongoClient.GetDatabase(settings.DatabaseName);
             var private_message_database = mongoClient.GetDatabase(settingsPrivateMessage.DatabaseName);
 
             _users = user_database.GetCollection<User>(settings.UserCollectionName);
             _privateMessages = private_message_database.GetCollection<PrivateMessage>(settingsPrivateMessage.PrivateMessageCollectionName);
-            _context = context;  // Set the context
+     
         }
 
         public async Task AddAsync(PrivateMessage message)
@@ -78,7 +78,7 @@ namespace Infrastructure.Repositories
 
             var result = recentChatsWithLastMessages.Select(async g =>
             {
-                var user = await _context.User.Find(u => u.Id == g.Key).FirstOrDefaultAsync();
+                var user = await _users.Find(u => u.Id == g.Key).FirstOrDefaultAsync();
                 var lastMessage = g.OrderByDescending(msg => msg.CreationDate).First();
 
                 return new ChatWithLastMessage

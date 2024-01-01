@@ -19,64 +19,16 @@ using MongoDB.Driver;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = new ConfigurationBuilder()
+    .AddEnvironmentVariables("MongoDBSettings:")  // Assuming your environment variables are prefixed with "MongoDBSettings:"
+    .Build();
 
 
-//UserServices
-builder.Services.AddScoped<IUserAccountService, UserAccountService>();
-builder.Services.AddScoped<IAuthenticatedUserService, AuthenticatedUserService>();
-builder.Services.AddScoped<IUserProfileImageService, UserProfileImageService>();
-builder.Services.AddScoped<IUserRetrievalService, UserRetrievalService>();
-//FileServices
-builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
-builder.Services.AddScoped<IFileService, FileService>();
-//MessagesServices
-builder.Services.AddScoped<IPrivateMessageService, PrivateMessageService>();
-//Repositories
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IPrivateMessageRepository, PrivateMessageRepository>();
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
-    {
-        Description = "Standard Authorization header using the Bearer scheme (\"bearer {token}\")",
-        In = ParameterLocation.Header,
-        Name = "Authorization",
-        Type = SecuritySchemeType.ApiKey
-    });
-    options.OperationFilter<SecurityRequirementsOperationFilter>();
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Version = "v1",
-        Title = "Chat API",
-        Description = "An ASP.NET Core Web API for managing Chat website",
-        Contact = new OpenApiContact
-        {
-            Name = "omerfdev",
-            Url = new Uri("https://www.linkedin.com/in/omeralmali")
-        },
-    });
-});
-
-
-//builder.Services.AddDbContext<ChatContext>(options =>
-//                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-//var configuration = new ConfigurationBuilder()
-//    .AddEnvironmentVariables("MongoDBSettings:"); // Assuming your environment variables are prefixed with "MongoDBSettings:"
-//    .Build();
-
-
-//builder.Services.AddSingleton<IMongoDatabase>(_ => new Connection(configuration).GetDatabase());
-//builder.Services.AddScoped<IClientSessionHandle>(_ => new Connection(configuration).StartSession());
-// Add MongoDB connection
-//connection to mongo db ATLAS
-// Add MongoDB connection for User database
+builder.Services.AddSingleton<IMongoDatabase>(_ => new ChatContext(configuration).GetDatabase());
+builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient("mongodb+srv://omerfdev:Admin1234@cluster0.xsev4x8.mongodb.net/?retryWrites=true&w=majority"));
 
 builder.Services.Configure<UserDatabaseSettings>(builder.Configuration.GetSection(nameof(UserDatabaseSettings)));
 builder.Services.AddSingleton<IUserDatabaseSettings>(us => us.GetRequiredService<IOptions<UserDatabaseSettings>>().Value);
@@ -121,6 +73,50 @@ builder.Services.AddScoped<IClientSessionHandle>(_ =>
     var client = _.GetService<IMongoClient>();
     return client.StartSession();
 });
+//UserServices
+builder.Services.AddScoped<IUserAccountService, UserAccountService>();
+builder.Services.AddScoped<IAuthenticatedUserService, AuthenticatedUserService>();
+builder.Services.AddScoped<IUserProfileImageService, UserProfileImageService>();
+builder.Services.AddScoped<IUserRetrievalService, UserRetrievalService>();
+//FileServices
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+builder.Services.AddScoped<IFileService, FileService>();
+//MessagesServices
+builder.Services.AddScoped<IPrivateMessageService, PrivateMessageService>();
+//Repositories
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPrivateMessageRepository, PrivateMessageRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+    {
+        Description = "Standard Authorization header using the Bearer scheme (\"bearer {token}\")",
+        In = ParameterLocation.Header,
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey
+    });
+    options.OperationFilter<SecurityRequirementsOperationFilter>();
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "Chat API",
+        Description = "An ASP.NET Core Web API for managing Chat website",
+        Contact = new OpenApiContact
+        {
+            Name = "omerfdev",
+            Url = new Uri("https://www.linkedin.com/in/omeralmali")
+        },
+    });
+});
+
+
+
 builder.Services.AddScoped<ChatContext>();
 builder.Services.AddHttpClient();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
