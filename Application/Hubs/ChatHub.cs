@@ -1,4 +1,5 @@
-﻿using Application.Services.PrivateMessageServices.Implementations;
+﻿using Amazon.Runtime.Internal.Transform;
+using Application.Services.PrivateMessageServices.Implementations;
 using Application.Services.PrivateMessageServices.Interfaces;
 using Application.Services.UserService.Interfaces;
 using Domain.Entities;
@@ -18,7 +19,7 @@ namespace Application.Hubs
         private readonly IPrivateMessageService privateMessageService;
         private readonly IMongoDatabase mongoDatabase;
         private readonly IMongoCollection<ConnectionInfo> userConnectionsCollection;
-    
+        private static readonly Dictionary<string, string> activeUsers = new();
         public ChatHub(
             IAuthenticatedUserService authenticatedUserService,
             IPrivateMessageService privateMessageService,
@@ -37,14 +38,16 @@ namespace Application.Hubs
             await Clients.Others.SendAsync("ReceiveMessage", userId, message);
         }
 
+
         public async Task SendMessageToUser(string userId, string message)
         {
-            var storedMessage = await privateMessageService.StorePrivateMessage(userId, message);
-          
+            if (activeUsers.ContainsKey(userId))
+            {
                 var username = authenticatedUserService.GetAuthenticatedUsername();
-                await Clients.Client(userId).SendAsync("ReceiveMessage", storedMessage, username);
-            
+                await Clients.Client(activeUsers[userId]).SendAsync("ReceiveMessage", message, username);
+            }
         }
+
 
         public async Task AddUser(string userId, string connectionId)
         {
@@ -58,27 +61,24 @@ namespace Application.Hubs
             return Context.ConnectionId;
         }
 
+        //public List<string> GetActiveUserIds()
+        //{
+        //    // TODO: MongoDB Implementation
+        //    var activeUserIds = userConnectionsCollection.AsQueryable().Select(uc => uc.UserId).ToList();
+        //    return activeUserIds;
+        //}
         public List<string> GetActiveUserIds()
         {
-            // TODO: MongoDB Implementation
-            var activeUserIds = userConnectionsCollection.AsQueryable().Select(uc => uc.UserId).ToList();
-            return activeUserIds;
+            return activeUsers.Keys.ToList();
         }
-
         public override async Task OnConnectedAsync()
         {
             var connectionId = GetConnectionId();
             var userId = authenticatedUserService.GetAuthenticatedUserId();
-
-            // TODO: MongoDB Implementation
-            var existingUserConnection = userConnectionsCollection.AsQueryable()
-                .FirstOrDefault(uc => uc.UserId == userId);
-
-            if (existingUserConnection == null)
+            if (!activeUsers.ContainsKey(userId))
             {
-                await AddUser(userId, connectionId);
+                activeUsers.Add(userId, connectionId);
             }
-
             await Clients.All.SendAsync("ReceiveActiveUsers", GetActiveUserIds());
             await base.OnConnectedAsync();
         }
@@ -87,15 +87,14 @@ namespace Application.Hubs
         {
             var connectionId = GetConnectionId();
 
-            // TODO: MongoDB Implementation
-            var userConnection = userConnectionsCollection.AsQueryable()
-                .FirstOrDefault(uc => uc.ConnectionId == connectionId);
-
-            if (userConnection != null)
+            foreach (var user in activeUsers)
             {
-                await userConnectionsCollection.DeleteOneAsync(uc => uc.UserId == userConnection.UserId);
+                if (user.Value == connectionId)
+                {
+                    activeUsers.Remove(user.Key);
+                    break;
+                }
             }
-
             await Clients.All.SendAsync("ReceiveActiveUsers", GetActiveUserIds());
             await base.OnDisconnectedAsync(exception);
         }
