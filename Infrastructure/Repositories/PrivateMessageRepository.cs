@@ -20,7 +20,7 @@ namespace Infrastructure.Repositories
     
 
         public PrivateMessageRepository(IUserDatabaseSettings settings,
-           IMongoClient mongoClient, IPrivateMessageDatabaseSettings settingsPrivateMessage)  // Add ChatContext parameter
+           IMongoClient mongoClient, IPrivateMessageDatabaseSettings settingsPrivateMessage)  
         {
             var user_database = mongoClient.GetDatabase(settings.DatabaseName);
             var private_message_database = mongoClient.GetDatabase(settingsPrivateMessage.DatabaseName);

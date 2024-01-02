@@ -23,7 +23,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = new ConfigurationBuilder()
-    .AddEnvironmentVariables("MongoDBSettings:")  // Assuming your environment variables are prefixed with "MongoDBSettings:"
+    .AddEnvironmentVariables("MongoDBSettings:")  
     .Build();
 
 

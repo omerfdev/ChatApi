@@ -1,5 +1,4 @@
-﻿using Amazon.Runtime.Internal.Transform;
-using Application.Services.PrivateMessageServices.Implementations;
+﻿using Application.Services.PrivateMessageServices.Implementations;
 using Application.Services.PrivateMessageServices.Interfaces;
 using Application.Services.UserService.Interfaces;
 using Domain.Entities;
@@ -9,7 +8,6 @@ using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
 namespace Application.Hubs
 {
     [Authorize]
@@ -19,7 +17,7 @@ namespace Application.Hubs
         private readonly IPrivateMessageService privateMessageService;
         private readonly IMongoDatabase mongoDatabase;
         private readonly IMongoCollection<ConnectionInfo> userConnectionsCollection;
-        private static readonly Dictionary<string, string> activeUsers = new();
+
         public ChatHub(
             IAuthenticatedUserService authenticatedUserService,
             IPrivateMessageService privateMessageService,
@@ -28,26 +26,22 @@ namespace Application.Hubs
             this.authenticatedUserService = authenticatedUserService;
             this.privateMessageService = privateMessageService;
             this.mongoDatabase = mongoDatabase;
-
             // TODO: MongoDB Implementation
             this.userConnectionsCollection = mongoDatabase.GetCollection<ConnectionInfo>("ConnectionInfo");
         }
-
         public async Task SendMessageToAll(string userId, string message)
         {
             await Clients.Others.SendAsync("ReceiveMessage", userId, message);
         }
 
-
         public async Task SendMessageToUser(string userId, string message)
         {
-            if (activeUsers.ContainsKey(userId))
-            {
-                var username = authenticatedUserService.GetAuthenticatedUsername();
-                await Clients.Client(activeUsers[userId]).SendAsync("ReceiveMessage", message, username);
-            }
-        }
+            var storedMessage = await privateMessageService.StorePrivateMessage(userId, message);
 
+            var username = authenticatedUserService.GetAuthenticatedUsername();
+            await Clients.Client(userId).SendAsync("ReceiveMessage", storedMessage, username);
+
+        }
 
         public async Task AddUser(string userId, string connectionId)
         {
@@ -55,51 +49,50 @@ namespace Application.Hubs
             var userConnection = new ConnectionInfo { UserId = userId, ConnectionId = connectionId };
             await userConnectionsCollection.InsertOneAsync(userConnection);
         }
-
         public string GetConnectionId()
         {
             return Context.ConnectionId;
         }
 
-        //public List<string> GetActiveUserIds()
-        //{
-        //    // TODO: MongoDB Implementation
-        //    var activeUserIds = userConnectionsCollection.AsQueryable().Select(uc => uc.UserId).ToList();
-        //    return activeUserIds;
-        //}
         public List<string> GetActiveUserIds()
         {
-            return activeUsers.Keys.ToList();
+            // TODO: MongoDB Implementation
+            var activeUserIds = userConnectionsCollection.AsQueryable().Select(uc => uc.UserId).ToList();
+            return activeUserIds;
         }
+
         public override async Task OnConnectedAsync()
         {
             var connectionId = GetConnectionId();
             var userId = authenticatedUserService.GetAuthenticatedUserId();
-            if (!activeUsers.ContainsKey(userId))
+
+            // TODO: MongoDB Implementation
+            var existingUserConnection = userConnectionsCollection.AsQueryable()
+                .FirstOrDefault(uc => uc.UserId == userId);
+
+            if (existingUserConnection == null)
             {
-                activeUsers.Add(userId, connectionId);
+                await AddUser(userId, connectionId);
             }
+
             await Clients.All.SendAsync("ReceiveActiveUsers", GetActiveUserIds());
             await base.OnConnectedAsync();
         }
-
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var connectionId = GetConnectionId();
 
-            foreach (var user in activeUsers)
+            // TODO: MongoDB Implementation
+            var userConnection = userConnectionsCollection.AsQueryable()
+                .FirstOrDefault(uc => uc.ConnectionId == connectionId);
+
+            if (userConnection != null)
             {
-                if (user.Value == connectionId)
-                {
-                    activeUsers.Remove(user.Key);
-                    break;
-                }
+                await userConnectionsCollection.DeleteOneAsync(uc => uc.UserId == userConnection.UserId);
             }
+
             await Clients.All.SendAsync("ReceiveActiveUsers", GetActiveUserIds());
             await base.OnDisconnectedAsync(exception);
         }
     }
-
-
-
 }
