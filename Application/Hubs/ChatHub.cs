@@ -16,16 +16,20 @@ namespace Application.Hubs
     {
         private readonly IAuthenticatedUserService authenticatedUserService;
         private readonly IPrivateMessageService privateMessageService;
-        private readonly IMongoCollection<ConnectionInfo> connectionInfoCollection;
-
+        private readonly IMongoDatabase mongoDatabase;
+        private readonly IMongoCollection<ConnectionInfo> userConnectionsCollection;
+    
         public ChatHub(
             IAuthenticatedUserService authenticatedUserService,
             IPrivateMessageService privateMessageService,
-            IMongoDatabase database)
+            IMongoDatabase mongoDatabase)
         {
             this.authenticatedUserService = authenticatedUserService;
             this.privateMessageService = privateMessageService;
-            this.connectionInfoCollection = database.GetCollection<ConnectionInfo>("ConnectionInfo");
+            this.mongoDatabase = mongoDatabase;
+
+            // TODO: MongoDB Implementation
+            this.userConnectionsCollection = mongoDatabase.GetCollection<ConnectionInfo>("ConnectionInfo");
         }
 
         public async Task SendMessageToAll(string userId, string message)
@@ -36,19 +40,17 @@ namespace Application.Hubs
         public async Task SendMessageToUser(string userId, string message)
         {
             var storedMessage = await privateMessageService.StorePrivateMessage(userId, message);
-            var connectionInfo = await connectionInfoCollection.Find(Builders<ConnectionInfo>.Filter.Eq(c => c.UserId, userId)).FirstOrDefaultAsync();
-
-            if (connectionInfo != null)
-            {
+          
                 var username = authenticatedUserService.GetAuthenticatedUsername();
-                await Clients.Client(connectionInfo.ConnectionId).SendAsync("ReceiveMessage", storedMessage, username);
-            }
+                await Clients.Client(userId).SendAsync("ReceiveMessage", storedMessage, username);
+            
         }
 
-        public async Task AddUser(string userId)
+        public async Task AddUser(string userId, string connectionId)
         {
-            var connectionId = Context.ConnectionId;
-            await connectionInfoCollection.InsertOneAsync(new ConnectionInfo { UserId = userId, ConnectionId = connectionId });
+            // TODO: MongoDB Implementation
+            var userConnection = new ConnectionInfo { UserId = userId, ConnectionId = connectionId };
+            await userConnectionsCollection.InsertOneAsync(userConnection);
         }
 
         public string GetConnectionId()
@@ -58,14 +60,25 @@ namespace Application.Hubs
 
         public List<string> GetActiveUserIds()
         {
-            var userIds = connectionInfoCollection.Find(_ => true).ToList().ConvertAll(info => info.UserId);
-            return userIds;
+            // TODO: MongoDB Implementation
+            var activeUserIds = userConnectionsCollection.AsQueryable().Select(uc => uc.UserId).ToList();
+            return activeUserIds;
         }
 
         public override async Task OnConnectedAsync()
         {
+            var connectionId = GetConnectionId();
             var userId = authenticatedUserService.GetAuthenticatedUserId();
-            await AddUser(userId);
+
+            // TODO: MongoDB Implementation
+            var existingUserConnection = userConnectionsCollection.AsQueryable()
+                .FirstOrDefault(uc => uc.UserId == userId);
+
+            if (existingUserConnection == null)
+            {
+                await AddUser(userId, connectionId);
+            }
+
             await Clients.All.SendAsync("ReceiveActiveUsers", GetActiveUserIds());
             await base.OnConnectedAsync();
         }
@@ -73,11 +86,21 @@ namespace Application.Hubs
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var connectionId = GetConnectionId();
-            await connectionInfoCollection.DeleteOneAsync(Builders<ConnectionInfo>.Filter.Eq(c => c.ConnectionId, connectionId));
+
+            // TODO: MongoDB Implementation
+            var userConnection = userConnectionsCollection.AsQueryable()
+                .FirstOrDefault(uc => uc.ConnectionId == connectionId);
+
+            if (userConnection != null)
+            {
+                await userConnectionsCollection.DeleteOneAsync(uc => uc.UserId == userConnection.UserId);
+            }
+
             await Clients.All.SendAsync("ReceiveActiveUsers", GetActiveUserIds());
             await base.OnDisconnectedAsync(exception);
         }
     }
 
-   
+
+
 }

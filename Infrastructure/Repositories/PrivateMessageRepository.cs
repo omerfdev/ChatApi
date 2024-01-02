@@ -69,27 +69,33 @@ namespace Infrastructure.Repositories
         public async Task<IEnumerable<ChatWithLastMessage>> GetRecentChatsForUser(string userId)
         {
             var recentChatsWithLastMessages = await _privateMessages
-                .AsQueryable()
-                .Where(m => m.SenderId == userId || m.ReceiverId == userId)
-                .GroupBy(m => m.SenderId == userId ? m.ReceiverId : m.SenderId)
-                .OrderByDescending(g => g.Max(m => m.CreationDate))
-                .Take(10)
+                .Aggregate()
+                .Match(m => m.SenderId == userId || m.ReceiverId == userId)
+                .Group(g => g.SenderId == userId ? g.ReceiverId : g.SenderId, group => new
+                {
+                    User = group.Key,
+                    LastMessage = group.OrderByDescending(msg => msg.CreationDate).First()
+                })
+                .SortByDescending(result => result.LastMessage.CreationDate)
+                .Limit(10)
                 .ToListAsync();
 
-            var result = recentChatsWithLastMessages.Select(async g =>
+            var result = await Task.WhenAll(recentChatsWithLastMessages.Select(async chat =>
             {
-                var user = await _users.Find(u => u.Id == g.Key).FirstOrDefaultAsync();
-                var lastMessage = g.OrderByDescending(msg => msg.CreationDate).First();
+                var user = await _users.Find(u => u.Id == chat.User).FirstOrDefaultAsync();
 
                 return new ChatWithLastMessage
                 {
                     User = user,
-                    LastMessage = lastMessage
+                    LastMessage = chat.LastMessage
                 };
-            }).ToList();
+            }));
 
-            return await Task.WhenAll(result);
+            return result;
         }
+
+
+
 
     }
 }

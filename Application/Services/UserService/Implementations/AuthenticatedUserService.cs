@@ -16,18 +16,12 @@ namespace BusinessLayer.Services.UserService.Implementations
 
         public string GetAuthenticatedUserId()
         {
-            string userId = null; // Default olarak null olarak başlatıldı.
-
+            var userId = "0";
             if (httpContextAccessor.HttpContext != null)
             {
-                var nameIdentifier = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                if (nameIdentifier != null && int.TryParse(nameIdentifier, out int parsedUserId))
-                {
-                    userId = parsedUserId.ToString(); // int'i string'e çevirerek atama yapılıyor.
-                }
+                var NameIdentifier = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                userId = NameIdentifier;
             }
-
             return userId;
         }
 

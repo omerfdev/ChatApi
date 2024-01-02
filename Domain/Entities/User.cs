@@ -7,7 +7,7 @@ namespace Domain.Entities
     public class User
     {
         [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
+        [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]       
         public string  Id { get; set; }
         [BsonElement("username")]
         public string Username { get; set; } = string.Empty;

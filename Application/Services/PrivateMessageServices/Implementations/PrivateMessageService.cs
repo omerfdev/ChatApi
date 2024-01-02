@@ -95,7 +95,8 @@ namespace Application.Services.PrivateMessageServices.Implementations
             {
                 throw new UnauthorizedException();
             }
-            var queryResult = await privateMessageRepository.GetRecentChatsForUser(userId);
+            // Asenkron sorguyu Task.Run ile sarmalama
+            var queryResult = await Task.Run(() => privateMessageRepository.GetRecentChatsForUser(userId));
 
             return mapper.Map<IEnumerable<ChatWithLastMessageResponseDto>>(queryResult);
         }
