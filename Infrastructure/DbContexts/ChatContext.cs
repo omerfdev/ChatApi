@@ -15,7 +15,7 @@ namespace Infrastructure.DbContexts
       
         public ChatContext(IConfiguration configuration)
         {
-            string connectionUri = "mongodb+srv://omerfdev:Admin1234@cluster0.xsev4x8.mongodb.net/?retryWrites=true&w=majority";
+            string connectionUri = "mongodb+srv://omerfdev:Admin1234@cluster0.xsev4x8.mongodb.net/";
             var settings = MongoClientSettings.FromConnectionString(connectionUri);
             settings.ServerApi = new ServerApi(ServerApiVersion.V1);
             var client = new MongoClient(settings);

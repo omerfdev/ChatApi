@@ -1,10 +1,11 @@
-using Application.Hubs;
+
 using Application.Services.FileServices.Implementations;
 using Application.Services.FileServices.Interfaces;
 using Application.Services.PrivateMessageServices.Implementations;
 using Application.Services.PrivateMessageServices.Interfaces;
 using Application.Services.UserService.Implementations;
 using Application.Services.UserService.Interfaces;
+using BusinessLayer.Hubs;
 using BusinessLayer.Services.UserService.Implementations;
 using ChatApi;
 using Domain.Repositories;
