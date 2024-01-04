@@ -17,17 +17,17 @@ namespace Infrastructure.Repositories
     {
         private readonly IMongoCollection<PrivateMessage> _privateMessages;
         private readonly IMongoCollection<User> _users;
-    
+
 
         public PrivateMessageRepository(IUserDatabaseSettings settings,
-           IMongoClient mongoClient, IPrivateMessageDatabaseSettings settingsPrivateMessage)  
+           IMongoClient mongoClient, IPrivateMessageDatabaseSettings settingsPrivateMessage)
         {
             var user_database = mongoClient.GetDatabase(settings.DatabaseName);
             var private_message_database = mongoClient.GetDatabase(settingsPrivateMessage.DatabaseName);
 
             _users = user_database.GetCollection<User>(settings.UserCollectionName);
             _privateMessages = private_message_database.GetCollection<PrivateMessage>(settingsPrivateMessage.PrivateMessageCollectionName);
-     
+
         }
 
         public async Task AddAsync(PrivateMessage message)
@@ -42,10 +42,10 @@ namespace Infrastructure.Repositories
         }
 
         public async Task<Tuple<List<PrivateMessage>, bool>> GetPrivateMessagesForPrivateChat(
-             DateTime pageDate,
-             int pageSize,
-             string firstUserId,
-             string secondUserId)
+            DateTime pageDate,
+            int pageSize,
+            string firstUserId,
+            string secondUserId)
         {
             var filter = Builders<PrivateMessage>.Filter.Where(m =>
                 (m.SenderId == firstUserId && m.ReceiverId == secondUserId) ||
@@ -57,14 +57,15 @@ namespace Infrastructure.Repositories
 
             var messagesList = await _privateMessages
                 .Find(filter)
-                .SortByDescending(c => c.CreationDate)
-                .Limit(pageSize)
-                .SortBy(c => c.CreationDate)
+                .SortBy(c => c.CreationDate) 
+                .Skip((int)messagesCount - pageSize) 
                 .ToListAsync();
 
             var result = Tuple.Create(messagesList, isThereMore);
             return result;
         }
+
+
 
         public async Task<IEnumerable<ChatWithLastMessage>> GetRecentChatsForUser(string userId)
         {
@@ -77,7 +78,7 @@ namespace Infrastructure.Repositories
                     LastMessage = group.OrderByDescending(msg => msg.CreationDate).First()
                 })
                 .SortByDescending(result => result.LastMessage.CreationDate)
-                .Limit(10)
+                
                 .ToListAsync();
 
             var result = await Task.WhenAll(recentChatsWithLastMessages.Select(async chat =>

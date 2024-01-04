@@ -56,7 +56,7 @@ namespace Application.Services.UserService.Implementations
             var upludeResults = await cloudinaryService.UploadImageToCloudinary(imageLocalPath);
             fileService.DeleteFile(imageLocalPath);
 
-            user.Image = new Image()
+            user.Image = new Images()
             {
                 ImagePath = upludeResults.Item1,
                 CloudinaryIdentifier = upludeResults.Item2,
@@ -83,7 +83,7 @@ namespace Application.Services.UserService.Implementations
             var imageLocalPath = await fileService.StoreImageToLocalFolder(image);
             var upludeResults = await cloudinaryService.UploadImageToCloudinary(imageLocalPath);
             fileService.DeleteFile(imageLocalPath);
-            user.Image = new Image()
+            user.Image = new Images()
             {
                 ImagePath = upludeResults.Item1,
                 CloudinaryIdentifier = upludeResults.Item2,

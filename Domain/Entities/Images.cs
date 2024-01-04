@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities
 {
-    public class Image
+    public class Images
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]

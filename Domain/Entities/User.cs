@@ -22,7 +22,7 @@ namespace Domain.Entities
         [BsonElement("image_id")]
         public string? ImageId { get; set; }
         [BsonElement("image")]
-        public Image Image { get; set; }
+        public Images Image { get; set; }
         public ICollection<PrivateMessage> SendedPrivateMessages { get; set; }
         public ICollection<PrivateMessage> ReceivedPrivateMessages { get; set; }
     }

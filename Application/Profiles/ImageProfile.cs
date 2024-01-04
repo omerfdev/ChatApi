@@ -13,7 +13,7 @@ namespace Application.Profiles
     {
         public ImageProfile()
         {
-            CreateMap<Image, ImageResponseDto>();
+            CreateMap<Images, ImageResponseDto>();
         }
     }
 }
