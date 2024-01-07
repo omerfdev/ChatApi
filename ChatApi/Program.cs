@@ -80,7 +80,8 @@ builder.Services.AddScoped<IAuthenticatedUserService, AuthenticatedUserService>(
 builder.Services.AddScoped<IUserProfileImageService, UserProfileImageService>();
 builder.Services.AddScoped<IUserRetrievalService, UserRetrievalService>();
 //FileServices
-builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IFileService, FileService>();
 //MessagesServices
 builder.Services.AddScoped<IPrivateMessageService, PrivateMessageService>();
@@ -88,9 +89,6 @@ builder.Services.AddScoped<IPrivateMessageService, PrivateMessageService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPrivateMessageRepository, PrivateMessageRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -115,9 +113,6 @@ builder.Services.AddSwaggerGen(options =>
         },
     });
 });
-
-
-
 builder.Services.AddScoped<ChatContext>();
 builder.Services.AddHttpClient();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

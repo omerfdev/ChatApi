@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Application.Services.FileServices.Interfaces
 {
-    public interface ICloudinaryService
+    public interface IImageService
     {
-        Task DeleteImageFromCloudinary(string CloudinaryIdentifier);
-        Task<Tuple<string, string>> UploadImageToCloudinary(string imagePath);
+        Task DeleteImage(string Images);
+        Task<string> UploadImage(string imagePath,string userId);
     }
 }

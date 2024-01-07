@@ -43,7 +43,7 @@ namespace Infrastructure.Repositories
             string searchText = null)
         {
             var filterBuilder = Builders<User>.Filter;
-            var filterDefinition = filterBuilder.Empty; // Initial filter
+            var filterDefinition = filterBuilder.Empty; 
 
             if (!string.IsNullOrEmpty(searchText))
             {

@@ -6,9 +6,7 @@ using Domain.Entities;
 using Domain.Repositories;
 using Microsoft.AspNetCore.Http;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Application.Services.UserService.Implementations
@@ -17,19 +15,19 @@ namespace Application.Services.UserService.Implementations
     {
         private readonly IUnitOfWork unitOfWork;
         private readonly IFileService fileService;
-        private readonly ICloudinaryService cloudinaryService;
+        private readonly IImageService imageService;
         private readonly IAuthenticatedUserService authenticatedUserService;
         private readonly IUserRepository userRepository;
 
         public UserProfileImageService(
             IUnitOfWork unitOfWork,
             IFileService fileService,
-            ICloudinaryService cloudinaryService,
+            IImageService imageService,
             IAuthenticatedUserService authenticatedUserService,
             IUserRepository userRepository)
         {
             this.unitOfWork = unitOfWork;
-            this.cloudinaryService = cloudinaryService;
+            this.imageService = imageService;
             this.fileService = fileService;
             this.authenticatedUserService = authenticatedUserService;
             this.userRepository = userRepository;
@@ -52,14 +50,14 @@ namespace Application.Services.UserService.Implementations
             {
                 throw new BadRequestException(UserExceptionMessages.DoNotHaveProfilePicture);
             }
-            await cloudinaryService.DeleteImageFromCloudinary(user.Image.CloudinaryIdentifier);
-            var upludeResults = await cloudinaryService.UploadImageToCloudinary(imageLocalPath);
+            await imageService.DeleteImage(user.Image.Id);
+            var uploadResult = imageService.UploadImage(imageLocalPath, user.Id);
             fileService.DeleteFile(imageLocalPath);
 
             user.Image = new Images()
             {
-                ImagePath = upludeResults.Item1,
-                CloudinaryIdentifier = upludeResults.Item2,
+                ImagePath = uploadResult.ToString(),
+                // Other properties as needed
             };
             await unitOfWork.SaveChangesAsync();
         }
@@ -81,14 +79,17 @@ namespace Application.Services.UserService.Implementations
                 throw new BadRequestException(UserExceptionMessages.AlreadyHaveProfilePicture);
             }
             var imageLocalPath = await fileService.StoreImageToLocalFolder(image);
-            var upludeResults = await cloudinaryService.UploadImageToCloudinary(imageLocalPath);
-            fileService.DeleteFile(imageLocalPath);
+            var uploadResult = await imageService.UploadImage(imageLocalPath,user.Id);
+            
             user.Image = new Images()
             {
-                ImagePath = upludeResults.Item1,
-                CloudinaryIdentifier = upludeResults.Item2,
+                Id = uploadResult,
+                ImagePath = imageLocalPath,
+                userId = user.Id
+                // Other properties as needed
             };
             await unitOfWork.SaveChangesAsync();
+
         }
 
         public async Task DeleteProfilePictureAsync(string userId)
@@ -107,7 +108,7 @@ namespace Application.Services.UserService.Implementations
             {
                 throw new BadRequestException(UserExceptionMessages.DoNotHaveProfilePicture);
             }
-            await cloudinaryService.DeleteImageFromCloudinary(user.Image.CloudinaryIdentifier);
+            await imageService.DeleteImage(user.Image.Id);
             user.Image = null;
             await unitOfWork.SaveChangesAsync();
         }

@@ -13,9 +13,10 @@ namespace Domain.Entities
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
-        [BsonElement("cloudinary_identifier")]
-        public string CloudinaryIdentifier { get; set; }
+
         [BsonElement("image_path")]
         public string ImagePath { get; set; }
+        [BsonElement("user_id")]
+        public string userId { get; set; }
     }
 }
