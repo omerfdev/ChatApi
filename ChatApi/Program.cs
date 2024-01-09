@@ -26,11 +26,8 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = new ConfigurationBuilder()
     .AddEnvironmentVariables("MongoDBSettings:")  
     .Build();
-
-
 builder.Services.AddSingleton<IMongoDatabase>(_ => new ChatContext(configuration).GetDatabase());
 builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient("mongodb+srv://omerfdev:Admin1234@cluster0.xsev4x8.mongodb.net/?retryWrites=true&w=majority"));
-
 builder.Services.Configure<UserDatabaseSettings>(builder.Configuration.GetSection(nameof(UserDatabaseSettings)));
 builder.Services.AddSingleton<IUserDatabaseSettings>(us => us.GetRequiredService<IOptions<UserDatabaseSettings>>().Value);
 builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(builder.Configuration.GetValue<string>("UserDatabaseSettings:ConnectionString")));
@@ -39,7 +36,6 @@ builder.Services.AddScoped<IMongoDatabase>(_ =>
     var client = _.GetService<IMongoClient>();
     return client.GetDatabase(builder.Configuration.GetValue<string>("UserDatabaseSettings:DatabaseName"));
 });
-
 // Add MongoDB connection for PrivateMessage database
 builder.Services.Configure<PrivateMessageDatabaseSettings>(builder.Configuration.GetSection(nameof(PrivateMessageDatabaseSettings)));
 builder.Services.AddSingleton<IPrivateMessageDatabaseSettings>(pm => pm.GetRequiredService<IOptions<PrivateMessageDatabaseSettings>>().Value);
@@ -58,6 +54,12 @@ builder.Services.AddScoped<IMongoDatabase>(_ =>
     var client = _.GetService<IMongoClient>();
     return client.GetDatabase(builder.Configuration.GetValue<string>("ConnectionInfoDatabaseSettings:DatabaseName"));
 });
+builder.Services.AddScoped<IClientSessionHandle>(_ =>
+{
+    var client = _.GetService<IMongoClient>();
+    return client.StartSession();
+});
+
 // Add MongoDB connection for Image database
 builder.Services.Configure<ImageDatabaseSettings>(builder.Configuration.GetSection(nameof(ImageDatabaseSettings)));
 builder.Services.AddSingleton<IImageDatabaseSettings>(pm => pm.GetRequiredService<IOptions<ImageDatabaseSettings>>().Value);
@@ -67,11 +69,7 @@ builder.Services.AddScoped<IMongoDatabase>(_ =>
     var client = _.GetService<IMongoClient>();
     return client.GetDatabase(builder.Configuration.GetValue<string>("ImageDatabaseSettings:DatabaseName"));
 });
-builder.Services.AddScoped<IClientSessionHandle>(_ =>
-{
-    var client = _.GetService<IMongoClient>();
-    return client.StartSession();
-});
+
 //UserServices
 builder.Services.AddScoped<IUserAccountService, UserAccountService>();
 builder.Services.AddScoped<IAuthenticatedUserService, AuthenticatedUserService>();
