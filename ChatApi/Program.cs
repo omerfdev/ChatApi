@@ -49,17 +49,6 @@ builder.Services.AddScoped<IMongoDatabase>(_ =>
     var client = _.GetService<IMongoClient>();
     return client.GetDatabase(builder.Configuration.GetValue<string>("PrivateMessageDatabaseSettings:DatabaseName"));
 });
-
-// Add MongoDB connection for Image database
-builder.Services.Configure<ImageDatabaseSettings>(builder.Configuration.GetSection(nameof(ImageDatabaseSettings)));
-builder.Services.AddSingleton<IImageDatabaseSettings>(pm => pm.GetRequiredService<IOptions<ImageDatabaseSettings>>().Value);
-builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(builder.Configuration.GetValue<string>("ImageDatabaseSettings:ConnectionString")));
-builder.Services.AddScoped<IMongoDatabase>(_ =>
-{
-    var client = _.GetService<IMongoClient>();
-    return client.GetDatabase(builder.Configuration.GetValue<string>("ImageDatabaseSettings:DatabaseName"));
-});
-
 // Add MongoDB connection for ConnectionInfo database
 builder.Services.Configure<ConnectionInfoDatabaseSettings>(builder.Configuration.GetSection(nameof(ConnectionInfoDatabaseSettings)));
 builder.Services.AddSingleton<IConnectionInfoDatabaseSettings>(pm => pm.GetRequiredService<IOptions<ConnectionInfoDatabaseSettings>>().Value);
@@ -68,6 +57,15 @@ builder.Services.AddScoped<IMongoDatabase>(_ =>
 {
     var client = _.GetService<IMongoClient>();
     return client.GetDatabase(builder.Configuration.GetValue<string>("ConnectionInfoDatabaseSettings:DatabaseName"));
+});
+// Add MongoDB connection for Image database
+builder.Services.Configure<ImageDatabaseSettings>(builder.Configuration.GetSection(nameof(ImageDatabaseSettings)));
+builder.Services.AddSingleton<IImageDatabaseSettings>(pm => pm.GetRequiredService<IOptions<ImageDatabaseSettings>>().Value);
+builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(builder.Configuration.GetValue<string>("ImageDatabaseSettings:ConnectionString")));
+builder.Services.AddScoped<IMongoDatabase>(_ =>
+{
+    var client = _.GetService<IMongoClient>();
+    return client.GetDatabase(builder.Configuration.GetValue<string>("ImageDatabaseSettings:DatabaseName"));
 });
 builder.Services.AddScoped<IClientSessionHandle>(_ =>
 {
