@@ -17,17 +17,13 @@ namespace Infrastructure.Repositories
     {
         private readonly IMongoCollection<PrivateMessage> _privateMessages;
         private readonly IMongoCollection<User> _users;
-
-
         public PrivateMessageRepository(IUserDatabaseSettings settings,
            IMongoClient mongoClient, IPrivateMessageDatabaseSettings settingsPrivateMessage)
         {
             var user_database = mongoClient.GetDatabase(settings.DatabaseName);
             var private_message_database = mongoClient.GetDatabase(settingsPrivateMessage.DatabaseName);
-
             _users = user_database.GetCollection<User>(settings.UserCollectionName);
             _privateMessages = private_message_database.GetCollection<PrivateMessage>(settingsPrivateMessage.PrivateMessageCollectionName);
-
         }
 
         public async Task AddAsync(PrivateMessage message)
